@@ -3,5 +3,6 @@
   "kind": "cli",
   "setup": [],
   "verify": ["python3.11", "-B", "verify.py"],
-  "demo": ["python3.11", "-B", "demo.py", "--database", "demo.sqlite3"]
+  "demo": ["python3.11", "-B", "demo.py", "--database", "demo.sqlite3"],
+  "channel_demo": ["python3.11", "-B", "channel_examples.py", "--demo", "--database", "channel-demo.sqlite3"]
 }

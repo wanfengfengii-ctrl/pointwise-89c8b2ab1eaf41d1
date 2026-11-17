@@ -1,6 +1,7 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
+import channel_examples
 from demo import run_demo
 
 
@@ -12,6 +13,7 @@ def main():
         return 1
     with TemporaryDirectory(prefix='river-verification-') as directory:
         run_demo(str(Path(directory) / 'demo.sqlite3'))
+        channel_examples.run(str(Path(directory) / 'channel.sqlite3'))
     return 0
 
 

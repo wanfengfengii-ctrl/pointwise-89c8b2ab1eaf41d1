@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 from observatory.archive.provenance import require_id
 from observatory.tasks.binding import bind_revision
-from observatory.tasks.specification import normalize_task_spec, same_task_spec
+from observatory.tasks.specification import (
+    normalize_task_spec, normalize_channel_task_spec, same_task_spec)
 from observatory.tasks.serialization import encode_task_spec, decode_task_spec
 
 
@@ -42,17 +43,29 @@ class TaskRepository:
     def save_query(self, task_id, dataset_id, revision, outputs, conditions):
         bound = bind_revision(self.distributions, dataset_id, revision)
         spec = normalize_task_spec(task_id, bound.distribution, outputs, conditions)
+        return self._save_spec(spec)
+
+    def save_channel_query(self, task_id, dataset_id, revision, latent_variables,
+                           channel, event, condition):
+        bound = bind_revision(self.distributions, dataset_id, revision)
+        spec = normalize_channel_task_spec(task_id, bound.distribution,
+                                           latent_variables, channel, event,
+                                           condition)
+        return self._save_spec(spec)
+
+    def _save_spec(self, spec):
         encoded = encode_task_spec(spec)
         with self.database.transaction() as connection:
             row = connection.execute('SELECT specification FROM tasks WHERE task_id=?',
-                                     (task_id,)).fetchone()
+                                     (spec.task_id,)).fetchone()
             if row:
                 if not same_task_spec(decode_task_spec(row[0]), spec):
                     raise TaskConflict('task ID already has a different fixed specification')
             else:
                 connection.execute('INSERT INTO tasks VALUES(?,?,?,?,?,NULL)',
-                                   (task_id, dataset_id, revision, encoded, 'pending'))
-        return self.load(task_id)
+                                   (spec.task_id, spec.dataset_id, spec.revision,
+                                    encoded, 'pending'))
+        return self.load(spec.task_id)
 
     def load(self, task_id):
         require_id(task_id, 'task_id')

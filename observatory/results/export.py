@@ -1,8 +1,15 @@
 import json
-from observatory.results.serialization import fraction_pair
+from observatory.results.serialization import fraction_pair, ChannelRiskResult
 
 
 def structured_result(result):
+    if isinstance(result, ChannelRiskResult):
+        data = result.to_public_record()
+        data['channel'] = [[fraction_pair(value) for value in row]
+                           for row in data['channel']]
+        data['lower'] = None if result.lower is None else fraction_pair(result.lower)
+        data['upper'] = None if result.upper is None else fraction_pair(result.upper)
+        return data
     data = result.to_public_record()
     data['condition_mass'] = fraction_pair(result.condition_mass)
     if result.rows is not None:

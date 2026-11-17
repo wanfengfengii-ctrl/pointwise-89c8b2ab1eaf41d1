@@ -1,5 +1,7 @@
+from observatory.analysis.channel import run_channel_query, ChannelQuery
 from observatory.analysis.query import run_query
 from observatory.tasks.binding import bind_revision, verify_binding
+from observatory.tasks.specification import ChannelTaskSpec
 from observatory.results.publication import candidate_from_outcome
 from observatory.results.reading import ResultUnavailable
 
@@ -17,6 +19,9 @@ class TaskExecutor:
     def _compute(self, revision, query):
         return run_query(revision, query)
 
+    def _compute_channel(self, revision, query):
+        return run_channel_query(revision, query)
+
     def execute_task(self, task_id):
         task = self.tasks.load(task_id)
         try:
@@ -28,7 +33,10 @@ class TaskExecutor:
                 raise ValueError('completed task is missing its result')
             bound = bind_revision(self.distributions, task.spec.dataset_id, task.spec.revision)
             revision = verify_binding(task.spec, bound)
-            outcome = self._compute(revision, task.spec.query)
+            if isinstance(task.spec, ChannelTaskSpec):
+                outcome = self._compute_channel(revision, task.spec.query)
+            else:
+                outcome = self._compute(revision, task.spec.query)
             self.publisher.publish(task_id, candidate_from_outcome(task, outcome))
             return self.reader.read_result(task_id)
         except Exception as exc:

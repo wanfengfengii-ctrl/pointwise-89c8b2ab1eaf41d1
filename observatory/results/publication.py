@@ -1,8 +1,13 @@
-from observatory.results.serialization import RiskResult, encode_result, decode_result
+from observatory.results.serialization import (
+    RiskResult, ChannelRiskResult, encode_result, decode_result)
 from observatory.results.validation import validate_result
+from observatory.tasks.specification import ChannelTaskSpec
 
 
 def candidate_from_outcome(task, outcome):
+    if isinstance(task.spec, ChannelTaskSpec):
+        return ChannelRiskResult(task.spec, outcome.status, outcome.lower,
+                                 outcome.upper)
     rows = None if outcome.table is None else outcome.table.rows
     return RiskResult(task.spec, outcome.status, outcome.condition_mass, rows)
 
